@@ -1,0 +1,9 @@
+[package]
+name = "hgame"
+version = "0.1.0"
+authors = ["loryruta <loryruta23@gmail.com>"]
+
+[dependencies]
+gl = "0.10.x"
+glfw = "0.25.x"
+glm = "0.2.x"
