@@ -1,57 +1,55 @@
-extern crate gl;
-extern crate glfw;
+extern crate graphics;
+extern crate opengl_graphics;
+extern crate piston;
+extern crate glutin_window;
+extern crate sprite;
+extern crate find_folder;
 
-use glfw::{Action, Context, Key};
+use opengl_graphics::OpenGL;
+use piston::event_loop::*;
+use piston::window::WindowSettings;
+use piston::input::*;
 
-mod level;
-use level::*;
+mod game;
+use game::Game;
+
+mod spritesheet;
+mod animation;
+
+use glutin_window::GlutinWindow;
+use std::io;
+use std::io::Write;
 
 pub fn main() {
-    // glfw
-    let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS)
-        .expect("Ops, I stepped a shit... G L F W");
+    // Change this to OpenGL::V2_1 if not working.
+    let opengl = OpenGL::V3_2;
 
-    let (mut window, events) = glfw.create_window(300, 300, "Test", glfw::WindowMode::Windowed)
-        .expect("Error on window creation");
+    // Create an Piston window.
+    let mut window: GlutinWindow = WindowSettings::new(
+        "hgame",
+        [200, 200],
+    )
+        .opengl(opengl)
+        .exit_on_esc(true)
+        .build()
+        .unwrap();
 
-    window.set_key_polling(true);
-    window.make_current();
+    // Create a new game and run it.
+    let mut game = Game::new(window);
 
-    window.show();
-
-    gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
-
-    // Level initialization
-    let entity = Entity::new();
-
-    let mut level = Level::new();
-    level.spawn(entity);
-
-
-
-    while !window.should_close() {
-        unsafe {
-            gl::Clear(gl::COLOR_BUFFER_BIT);
-            gl::ClearColor(0.0, 0.0, 0.0, 0.0);
+    let mut events = Events::new(EventSettings::new());
+    while let Some(e) = events.next(&mut game.window) {
+        if let Some(args) = e.render_args() {
+            game.render(&args);
         }
 
-        level.update(1.0);
+        if let Some(args) = e.update_args() {
+            game.update(&args);
+        }
 
-        // window update
-        window.swap_buffers();
-        glfw.poll_events();
-
-        for (_, event) in glfw::flush_messages(&events) {
-            match event {
-                glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => {
-                    window.set_should_close(true);
-                    println!("Bye bye");
-                },
-                glfw::WindowEvent::Key(Key::F, _, Action::Press, _) => {
-                    println!("FPS: ...");
-                },
-                _ => {}
-            }
+        if let Some(args) = e.press_args() {
+            println!("Press: {:?}", args);
+            io::stdout().flush().unwrap();
         }
     }
 }

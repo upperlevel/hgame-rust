@@ -4,6 +4,10 @@ version = "0.1.0"
 authors = ["loryruta <loryruta23@gmail.com>"]
 
 [dependencies]
-gl = "0.10.x"
-glfw = "0.25.x"
-glm = "0.2.x"
+piston = "0.37.0"
+piston2d-graphics = "0.26.0"
+pistoncore-glutin_window = "0.47.0"
+piston2d-opengl_graphics = "0.53.0"
+piston2d-sprite = "0.45.0"
+find_folder = "0.3.0"
+
