@@ -1,55 +1,37 @@
-extern crate graphics;
-extern crate opengl_graphics;
-extern crate piston;
-extern crate glutin_window;
-extern crate sprite;
-extern crate find_folder;
+extern crate amethyst;
 
-use opengl_graphics::OpenGL;
-use piston::event_loop::*;
-use piston::window::WindowSettings;
-use piston::input::*;
+use amethyst::prelude::*;
+use amethyst::renderer::{DisplayConfig, DrawSprite, Pipeline, RenderBundle, Stage};
+use amethyst::core::transform::TransformBundle;
+use amethyst::input::InputBundle;
 
-mod game;
-use game::Game;
+mod systems;
+use systems::hgame;
 
-mod spritesheet;
-mod animation;
+fn main() -> amethyst::Result<()> {
+    amethyst::start_logger(Default::default());
 
-use glutin_window::GlutinWindow;
-use std::io;
-use std::io::Write;
+    let path = "./resources/display_config.ron";
+    let config = DisplayConfig::load(&path);
 
-pub fn main() {
-    // Change this to OpenGL::V2_1 if not working.
-    let opengl = OpenGL::V3_2;
+    let pipe = Pipeline::build().with_stage(
+        Stage::with_backbuffer()
+            .clear_target([0.0, 0.0, 0.0, 1.0], 1.0)
+            .with_pass(DrawSprite::new())
+    );
 
-    // Create an Piston window.
-    let mut window: GlutinWindow = WindowSettings::new(
-        "hgame",
-        [200, 200],
-    )
-        .opengl(opengl)
-        .exit_on_esc(true)
-        .build()
-        .unwrap();
+    let input_handle = InputBundle::<String, String>::new()
+        .with_bindings_from_file("resources/bindings_config.ron")?;
 
-    // Create a new game and run it.
-    let mut game = Game::new(window);
+    let game_data = GameDataBuilder::default()
+        // a bundle is a preset of systems and resources
+        .with_bundle(RenderBundle::new(pipe, Some(config)).with_sprite_sheet_processor())?
+        .with_bundle(TransformBundle::new())? // this bundle will also initialise the transform storage on world.
+        .with_bundle(input_handle)?
+        .with(systems::PlayerMovement, "player_movement_system", &["input_system"]);
 
-    let mut events = Events::new(EventSettings::new());
-    while let Some(e) = events.next(&mut game.window) {
-        if let Some(args) = e.render_args() {
-            game.render(&args);
-        }
+    let mut game = Application::new("./resources", hgame::HGame, game_data)?;
+    game.run();
 
-        if let Some(args) = e.update_args() {
-            game.update(&args);
-        }
-
-        if let Some(args) = e.press_args() {
-            println!("Press: {:?}", args);
-            io::stdout().flush().unwrap();
-        }
-    }
+    Ok(())
 }
